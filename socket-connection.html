@@ -12,54 +12,65 @@ The `socket-connection` provides the abiliity to connect to a `socket.io` server
 @element socket-connection
 @status alpha
 -->
-<polymer-element name="socket-connection" attributes="url auto" constructor="SocketConnection">
-  <template><content /></template>
+<dom-module id="socket-connection">
   <script>
-    Polymer('socket-connection', {
-       /**
-       * Fired when the socket was successfully connected.
-       *
-       * @event socket-connect
-       */
+    Polymer({
+      is:'socket-connection',
+      properties: {
+        /**
+         * Fired when the socket was successfully connected.
+         *
+         * @event socket-connect
+         */
 
-       /**
-       * Fired when an error occurred.
-       *
-       * @event socket-error
-       */
+        /**
+         * Fired when an error occurred.
+         *
+         * @event socket-error
+         */
 
-       /**
-       * Fired when the connection timed out.
-       *
-       * @event socket-timeout
-       */
+        /**
+         * Fired when the connection timed out.
+         *
+         * @event socket-timeout
+         */
 
-      /**
-       * URL to the socket.io server, can be relative to the current server.
-       *
-       * @attribute url
-       * @type string
-       * @default ''
-       */
-      url : '',
+        /**
+         * URL to the socket.io server, can be relative to the current server.
+         *
+         * @attribute url
+         * @type string
+         * @default ''
+         */
+        url : {
+          type: String,
+          value: ''
+        },
 
-      /**
-       * Indicates if this connection should be initiated automaticly.
-       *
-       * @attribute auto
-       * @type boolean
-       * @default true
-       */
-      auto : true,
+        /**
+         * Indicates if this connection should be initiated automaticly.
+         *
+         * @attribute auto
+         * @type boolean
+         * @default true
+         */
+        auto : {
+          type: Boolean,
+          value: true
+        },
 
-      /**
-       * Holds the socket.io connection
-       *
-       * @property socket
-       * @type socket instance
-       * @default null
-       */
-      socket : null,
+        /**
+         * Holds the socket.io connection
+         *
+         * @property socket
+         * @type socket instance
+         * @default null
+         */
+        socket : {
+          type: Socket,
+          value: null
+        }
+      },
 
       /**
        * Indicates if the socket is connected to the server
@@ -114,20 +125,23 @@ The `socket-connection` provides the abiliity to connect to a `socket.io` server
 
     });
   </script>
-</polymer-element>
+</dom-module>
 
 
 
-<polymer-element name="socket-base">
+<dom-module id="socket-base">
   <script>
-    Polymer('socket-base', {
+    Polymer( {
+      is:'socket-base',
 
-      domReady : function (){
-        if ( this.parentNode instanceof SocketConnection) {
-          this.connect().then(this.connected.bind(this));
-        } else {
-          console.warn(this.nodeName + " must be a child of <socket-connection>");
-        }
+      attached: function() {
+        this.async(function(){
+          if ( this.parentNode instanceof SocketConnection) {
+            this.connect().then(this.connected.bind(this));
+          } else {
+            console.warn(this.nodeName + " must be a child of <socket-connection>");
+          }
+        });
       },
 
       connect : function () {
@@ -140,7 +154,7 @@ The `socket-connection` provides the abiliity to connect to a `socket.io` server
 
     });
   </script>
-</polymer-element>
+</dom-module>
 
 <!--
 The `socket-emitter` element acts as a emitter for custom events. It must be used as a child of `socket-connection`.
@@ -157,55 +171,74 @@ If the value of `chatMessage` is change, it will be emitted to the server.
 @element socket-emitter
 @status alpha
 -->
-<polymer-element name="socket-emitter" attributes="event eventLocal value auto initial" extends="socket-base">
+<dom-module id="socket-emitter">
   <script>
-    Polymer('socket-emitter', {
+    Polymer({
+      is:'socket-emitter',
 
-      /**
-       * Name of the event that will be emitted
-       *
-       * @attribute event
-       * @type string
-       * @default undefined
-       */
+      extends: 'socket-base',
 
-      /**
-       * Name of the event that is locally fired if an event is emitted.
-       *
-       * @attribute eventLocal
-       * @type string
-       * @default undefined
-       */
+      properties: {
+        /**
+         * Name of the event that will be emitted
+         *
+         * @attribute event
+         * @type string
+         * @default undefined
+         */
+        event: {
+          type: String,
+          value: undefined
+        },
 
-      /**
-       * The value that will be emitted.
-       *
-       * @attribute value
-       * @type any
-       * @default null
-       */
-      value      : null,
+        /**
+         * Name of the event that is locally fired if an event is emitted.
+         *
+         * @attribute eventLocal
+         * @type string
+         * @default undefined
+         */
+        eventLocal: {
+          type: String,
+          value: undefined
+        },
 
-      /**
-       * Controlles if the value of this emitter will be automaticly emitted on change.
-       *
-       * @attribute auto
-       * @type boolean
-       * @default false
-       */
-      auto       : false,
+        /**
+         * The value that will be emitted.
+         *
+         * @attribute value
+         * @type any
+         * @default null
+         */
+        value: {
+          type: Object,
+          value: null
+        },
 
-      /**
-       * Defines if the initial value of this emitter should be transmitted
-       *
-       * @attribute initial
-       * @type boolean
-       * @default false
-       */
-      inital     : false,
+        /**
+         * Controlles if the value of this emitter will be automaticly emitted on change.
+         *
+         * @attribute auto
+         * @type boolean
+         * @default false
+         */
+        auto: {
+          type: Boolean,
+          value: false
+        },
 
-      observe : {
-        value : 'connected'
+        /**
+         * Defines if the initial value of this emitter should be transmitted
+         *
+         * @attribute initial
+         * @type boolean
+         * @default false
+         */
+        inital: {
+          type: Boolean,
+          value: false,
+          observer: 'connected'
+        }
       },
 
       ready : function (){
@@ -238,7 +271,7 @@ If the value of `chatMessage` is change, it will be emitted to the server.
       }
     });
   </script>
-</polymer-element>
+</dom-module>
 
 <!--
 The `socket-receiver` element acts as a receiver for custom events. It must be used as a child of `socket-connection`.
@@ -255,31 +288,45 @@ If the value of `chatMessage` is change, it will be emitted to the server.
 @element socket-receiver
 @status alpha
 -->
-<polymer-element name="socket-receiver" attributes="event data" extends="socket-base">
+<dom-module id="socket-receiver">
   <script>
-    Polymer('socket-receiver', {
-      /**
-       * Fired when an event is received.
-       *
-       * @event received-data
-       */
+    Polymer({
+      id: 'socket-receiver',
 
-      /**
-       * Name of the event to listen to.
-       *
-       * @attribute event
-       * @type string
-       * @default undefined
-       */
+      extends: 'socket-base',
 
-       /**
-        * Latest data received by this elements event.
-        *
-        * @attribute data
-        * @type any
-        * @default null
-        */
-      data : null,
+      properties: {
+        /**
+         * Fired when an event is received.
+         *
+         * @event received-data
+         */
+
+        /**
+         * Name of the event to listen to.
+         *
+         * @attribute event
+         * @type string
+         * @default undefined
+         */
+        event:{
+          type: String,
+          value: undefined
+        },
+
+
+        /**
+         * Latest data received by this elements event.
+         *
+         * @attribute data
+         * @type any
+         * @default null
+         */
+        data : {
+          type: Object,
+          value: null
+        },
+      },
 
       connected : function ( ) {
         this.socket.on(this.event, function(data){
@@ -295,4 +342,4 @@ If the value of `chatMessage` is change, it will be emitted to the server.
       }
     });
   </script>
-</polymer-element>
+</dom-module>
