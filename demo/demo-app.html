@@ -1,0 +1,106 @@
+<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+<link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+<link rel="import" href="../../polymer/polymer.html">
+
+<link rel="import" href="../socket-connection.html">
+
+<dom-module id="demo-app">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+
+            ul {
+                list-style-type: none;
+                padding: 0;
+            }
+        </style>
+
+        <div class="vertical-section-container centered">
+            <h2>Basic socket-connection Demo (Open developer console for more information)</h2>
+            <p>This is a modified version of the "getting started" chat app of the socket.io documentation.</p>
+            <p>To use the example you need to turn on the demo server by running 'node demo-server.js' in the root of the repository</p>
+
+            <input id="input" autocomplete="off" />
+            <button on-tap="handleMessageSubmit">Send</button>
+
+            <h3>Messages:</h3>
+            <ul id="messages">
+                <template is="dom-repeat" items="{{messages}}">
+                    <li>{{item.message}}</li>
+                    <hr/>
+                </template>
+            </ul>
+
+            <socket-connection url="http://localhost:3000/" auto>
+                <socket-emitter id="emitter" event="chat message" value="{{chatMessage}}"></socket-emitter>
+                <socket-receiver id="receiver" event="chat message"></socket-receiver>
+            </socket-connection>
+
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+
+            is: 'demo-app',
+
+            properties: {
+                chatMessage: {
+                    type: String,
+                    value: ""
+                },
+                messages: {
+                    type: Array,
+                    value: [],
+                    notify: true
+                }
+            },
+
+            listeners: {
+                'socket-connect': 'handleSocketConnect',
+                'socket-error': 'handleSocketError',
+                'socket-timeout': 'handleSocketTimeout'
+            },
+
+            ready: function() {
+                this.$.receiver.addEventListener("received-data", this.handleRecievedData.bind(this));
+            },
+
+            handleMessageSubmit: function(event) {
+                let input = this.$.input;
+
+                if (input.value) {
+                    this.chatMessage = input.value;
+
+                    this.$.emitter.emit();
+
+                    input.value = "";
+                } else {
+                    //You would display nice errors here
+                    console.error("Input is empty");
+                }
+
+            },
+            handleSocketConnect: function(event) {
+                console.log("Connected to socket!");
+            },
+            handleSocketError: function(event) {
+                console.error("An error has occoured: ", event.detail);
+            },
+            handleSocketTimeout: function() {
+                console.log("Connection to socket has timed out");
+            },
+            handleRecievedData: function(event) {
+                let data = event.detail;
+
+                //this.messages.push(data);
+                this.push('messages', data);
+                console.log("We got a new message: ", data);
+            }
+
+        });
+    </script>
+</dom-module>

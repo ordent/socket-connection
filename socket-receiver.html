@@ -1,0 +1,91 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+The `socket-receiver` element acts as a receiver for custom events. It must be used as a child of `socket-connection`.
+<b>Example</b>:
+      <span>{{ serverTime }} ms</span>
+      <socket-connection url="/time" auto>
+        <socket-receiver event="timeUpdate"
+                         data="{{serverTime}}"></socket-receiver>
+      </socket-connection>
+If the value of `chatMessage` is change, it will be emitted to the server.
+@element socket-receiver
+@status alpha
+-->
+
+<dom-module id="socket-receiver">
+    <template>
+        <style>
+            :host {
+                display: none;
+            }
+        </style>
+    </template>
+    <script>
+        Polymer({
+
+            is: 'socket-receiver',
+
+            //extends: 'socket-base',
+            properties: {
+                /**
+                 * Fired when an event is received.
+                 *
+                 * @event received-data
+                 */
+                /**
+                 * Name of the event to listen to.
+                 *
+                 * @attribute event
+                 * @type string
+                 * @default undefined
+                 */
+                event: {
+                    type: String,
+                    value: undefined
+                },
+                /**
+                 * Latest data received by this elements event.
+                 *
+                 * @attribute data
+                 * @type any
+                 * @default null
+                 */
+                data: {
+                    value: null
+                },
+            },
+            connected: function() {
+                this.socket.on(this.event, function(data) {
+                    // Attach data to this receiver
+                    this.data = data;
+
+                    // Fire `received-data` event
+                    this.fire('received-data', data);
+                    this.fire('iron-signal', {
+                        name: 'socket-inbound-' + this.event,
+                        data: data
+                    });
+                }.bind(this));
+            },
+            detached: function() {
+                this.socket.off(this.event);
+            },
+
+            ready: function() {
+                if (Polymer.dom(this).parentNode.tagName == "SOCKET-CONNECTION") {
+                    this.connect().then(this.connected.bind(this));
+                } else {
+                    console.warn(this.nodeName + " must be a child of <socket-connection>");
+                }
+            },
+
+            connect: function() {
+                return Polymer.dom(this).parentNode.connect();
+            },
+            get socket() {
+                return Polymer.dom(this).parentNode.socket;
+            }
+        });
+    </script>
+</dom-module>

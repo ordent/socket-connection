@@ -1,0 +1,139 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+The `socket-emitter` element acts as a emitter for custom events. It must be used as a child of `socket-connection`.
+<b>Example</b>:
+      <socket-connection url="/chat" auto>
+        <socket-emitter event="message"
+                        value="{{chatMessage}}" auto></socket-emitter>
+      </socket-connection>
+If the value of `chatMessage` is change, it will be emitted to the server.
+@element socket-emitter
+@status alpha
+-->
+
+<dom-module id="socket-emitter">
+    <template>
+        <style>
+            :host {
+                display: none;
+            }
+        </style>
+    </template>
+
+    <script>
+        Polymer({
+
+            is: 'socket-emitter',
+
+            properties: {
+                /**
+                 * Name of the event that will be emitted
+                 *
+                 * @attribute event
+                 * @type string
+                 * @default undefined
+                 */
+                event: {
+                    type: String,
+                    value: undefined
+                },
+                /**
+                 * Name of the event that is locally fired if an event is emitted.
+                 *
+                 * @attribute eventLocal
+                 * @type string
+                 * @default undefined
+                 */
+                eventLocal: {
+                    type: String,
+                    value: undefined
+                },
+                /**
+                 * The value that will be emitted.
+                 *
+                 * @attribute value
+                 * @type any
+                 * @default null
+                 */
+                value: {
+                    type: Object,
+                    value: null
+                },
+                /**
+                 * Controlles if the value of this emitter will be automaticly emitted on change.
+                 *
+                 * @attribute auto
+                 * @type boolean
+                 * @default false
+                 */
+                auto: {
+                    type: Boolean,
+                    value: false
+                },
+                /**
+                 * Defines if the initial value of this emitter should be transmitted
+                 *
+                 * @attribute initial
+                 * @type boolean
+                 * @default false
+                 */
+                inital: {
+                    type: Boolean,
+                    value: false,
+                    observer: 'connected'
+                }
+            },
+
+
+            ready: function() {
+                if (this.initial) {
+                    this.connect().then(this.emit.bind(this));
+                }
+            },
+
+            attached: function() {
+                if (Polymer.dom(this).parentNode.tagName == "SOCKET-CONNECTION") {
+                    this.connect().then(this.connected.bind(this));
+                } else {
+                    console.warn(this.nodeName + " must be a child of <socket-connection>");
+                }
+            },
+
+            connect : function () {
+              return Polymer.dom(this).parentNode.connect();
+            },
+
+            connected: function() {
+                if (this.auto && (!!this.value)) {
+                    this.emit();
+                }
+            },
+
+            /**
+             * emit the current value
+             *
+             * @method emit
+             */
+            emit: function() {
+                if (this.event !== null) {
+                    this.socket.emit(this.event, this.value);
+                    if (this.eventLocal !== null) {
+                        this.fire(this.eventLocal, this.value);
+                    }
+                }
+            },
+
+            /**
+             * The socket connection
+             *
+             * @attribute initial
+             * @type Object
+             * @default false
+             */
+            get socket (){
+              return Polymer.dom(this).parentNode.socket;
+            }
+        });
+    </script>
+</dom-module>

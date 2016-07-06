@@ -1,304 +1,132 @@
 <link rel="import" href="../polymer/polymer.html">
 <script src="../socket.io-client/socket.io.js"></script>
-
-
+<link rel="import" href="socket-emitter.html">
+<link rel="import" href="socket-receiver.html">
 <!--
-The `socket-connection` provides the abiliity to connect to a `socket.io` server.
+The `socket-connection` provides the ability to connect to a `socket.io` server.
 <b>Example</b>:
     <socket-connection url="/chat" auto></socket-connection>
 @element socket-connection
 @status alpha
+@demo demo/index.html
 -->
+
 <dom-module id="socket-connection">
-  <script>
-    Polymer({
-      is:'socket-connection',
-      properties: {
-        /**
-         * Fired when the socket was successfully connected.
-         *
-         * @event socket-connect
-         */
-        /**
-         * Fired when an error occurred.
-         *
-         * @event socket-error
-         */
-        /**
-         * Fired when the connection timed out.
-         *
-         * @event socket-timeout
-         */
-        /**
-         * URL to the socket.io server, can be relative to the current server.
-         *
-         * @attribute url
-         * @type string
-         * @default ''
-         */
-        url : {
-          type: String,
-          value: ''
-        },
+    <template>
+        <style>
+            :host {
+                display: none;
+            }
+        </style>
+    </template>
 
-        /**
-         * Indicates if this connection should be initiated automaticly.
-         *
-         * @attribute auto
-         * @type boolean
-         * @default true
-         */
-        auto : {
-          type: Boolean,
-          value: true
-        },
-        /**
-         * Holds the socket.io connection
-         *
-         * @property socket
-         * @type socket instance
-         * @default null
-         */
-        socket : {
-          type: Object,
-          value: null
-        }
-      },
-      /**
-       * Indicates if the socket is connected to the server
-       *
-       * @property connected
-       * @type boolean
-       * @default false
-       */
-      get connected () {
-        return this.socket !== null;
-      },
-      ready : function (){
-        if (this.auto){
-          this.connect();
-        }
-      },
-      /**
-       * Initiate the connection to the server if needed but always returns a promise.
-       *
-       * @method connect
-       */
-      connect : function () {
-        if ( ! this.isConnected ) {
-          this._connect = new Promise(function(resolve, reject){
-            this.socket = io(this.url);
-            this.socket.on('connect', this.fireEvent('socket-connect'));
-            this.socket.on('connect_error', this.fireEvent('socket-error'));
-            this.socket.on('connect_timeout', this.fireEvent('socket-timeout'));
-            resolve( this.socket );
-          }.bind(this));
-        }
-        return this._connect;
-      },
-      fireEvent : function ( name, obj ){
-        return function (){
-          this.fire(name);
-        }.bind(this);
-      },
-      detached : function (){
-        if ( this.isConnected ) {
-          this.socket.destory();
-        }
-      }
-    });
-  </script>
-</dom-module>
+    <script>
+        Polymer({
 
-<!--
-The `socket-emitter` element acts as a emitter for custom events. It must be used as a child of `socket-connection`.
-<b>Example</b>:
-      <socket-connection url="/chat" auto>
-        <socket-emitter event="message"
-                        value="{{chatMessage}}" auto></socket-emitter>
-      </socket-connection>
-If the value of `chatMessage` is change, it will be emitted to the server.
-@element socket-emitter
-@status alpha
--->
-<dom-module id="socket-emitter">
-  <script>
-    Polymer({
-      is:'socket-emitter',
-      properties: {
-        /**
-         * Name of the event that will be emitted
-         *
-         * @attribute event
-         * @type string
-         * @default undefined
-         */
-        event: {
-          type: String,
-          value: undefined
-        },
-        /**
-         * Name of the event that is locally fired if an event is emitted.
-         *
-         * @attribute eventLocal
-         * @type string
-         * @default undefined
-         */
-        eventLocal: {
-          type: String,
-          value: undefined
-        },
-        /**
-         * The value that will be emitted.
-         *
-         * @attribute value
-         * @type any
-         * @default null
-         */
-        value: {
-          type: Object,
-          value: null
-        },
-        /**
-         * Controlles if the value of this emitter will be automaticly emitted on change.
-         *
-         * @attribute auto
-         * @type boolean
-         * @default false
-         */
-        auto: {
-          type: Boolean,
-          value: false
-        },
-        /**
-         * Defines if the initial value of this emitter should be transmitted
-         *
-         * @attribute initial
-         * @type boolean
-         * @default false
-         */
-        inital: {
-          type: Boolean,
-          value: false,
-          observer: 'connected'
-        }
-      },
-      ready : function (){
-        this.super();
-        if ( this.initial ) {
-          this.connect().then(this.emit.bind(this));
-        }
-      },
-      connected : function( ){
-        if ( this.auto && ( !!this.value ) ) {
-          this.emit( );
-        }
-      },
-      /**
-       * emit the current value
-       *
-       * @method emit
-       */
-      emit : function ( ) {
-        if ( this.event !== null ) {
-          this.socket.emit(this.event, this.value);
-          if ( this.eventLocal !== null ) {
-            this.fire(this.eventLocal, this.value);
-          }
-        }
-      },
+            is: 'socket-connection',
 
-      attached: function() {
-        this.async(function(){
-          if ( this.parentNode instanceof SocketConnection) {
-            this.connect().then(this.connected.bind(this));
-          } else {
-            console.warn(this.nodeName + " must be a child of <socket-connection>");
-          }
+            properties: {
+                /**
+                 * URL to the socket.io server, can be relative to the current server.
+                 *
+                 * @attribute url
+                 * @type string
+                 * @default ''
+                 */
+                url: {
+                    type: String,
+                    value: ''
+                },
+
+                /**
+                 * Indicates if this connection should be initiated automaticly.
+                 *
+                 * @attribute auto
+                 * @type boolean
+                 * @default true
+                 */
+                auto: {
+                    type: Boolean,
+                    value: true
+                },
+                /**
+                 * Holds the socket.io connection
+                 *
+                 * @property socket
+                 * @type socket instance
+                 * @default null
+                 */
+                socket: {
+                    type: Object,
+                    value: null
+                }
+            },
+            /**
+             * Fired when the socket was successfully connected.
+             *
+             * @event socket-connect
+             */
+            /**
+             * Fired when an error occurred.
+             *
+             * @event socket-error
+             */
+            /**
+             * Fired when the connection timed out.
+             *
+             * @event socket-timeout
+             */
+
+            ready: function() {
+                if (this.auto) {
+                    this.connect();
+                }
+            },
+
+            /**
+             * Indicates if the socket is connected to the server
+             *
+             * @property connected
+             * @type boolean
+             * @default false
+             */
+            get connected() {
+                return this.socket !== null;
+            },
+
+            /**
+             * Initiate the connection to the server if needed but always returns a promise.
+             *
+             * @method connect
+             */
+            connect: function() {
+                if (!this.isConnected) {
+                    this._connect = new Promise(function(resolve, reject) {
+
+                        try {
+                            this.socket = io(this.url);
+                            this.socket.on('connect', this._fireEvent('socket-connect'));
+                            this.socket.on('connect_error', this._fireEvent('socket-error'));
+                            this.socket.on('connect_timeout', this._fireEvent('socket-timeout'));
+                        }
+                        catch(e) {}
+
+                        resolve(this.socket);
+                    }.bind(this));
+                }
+                return this._connect;
+            },
+
+            /**
+             * Fires an event.
+             *
+             * @method _fireEvent
+             */
+            _fireEvent: function(name, obj) {
+                return function() {
+                    this.fire(name);
+                }.bind(this);
+            },
         });
-      },
-      connect : function () {
-        return this.parentNode.connect();
-      },
-      get socket (){
-        return this.parentNode.socket;
-      }
-    });
-  </script>
-</dom-module>
-
-<!--
-The `socket-receiver` element acts as a receiver for custom events. It must be used as a child of `socket-connection`.
-<b>Example</b>:
-      <span>{{ serverTime }} ms</span>
-      <socket-connection url="/time" auto>
-        <socket-receiver event="timeUpdate"
-                         data="{{serverTime}}"></socket-emitter>
-      </socket-connection>
-If the value of `chatMessage` is change, it will be emitted to the server.
-@element socket-receiver
-@status alpha
--->
-<dom-module id="socket-receiver">
-  <script>
-    Polymer({
-      id: 'socket-receiver',
-      //extends: 'socket-base',
-      properties: {
-        /**
-         * Fired when an event is received.
-         *
-         * @event received-data
-         */
-        /**
-         * Name of the event to listen to.
-         *
-         * @attribute event
-         * @type string
-         * @default undefined
-         */
-        event:{
-          type: String,
-          value: undefined
-        },
-        /**
-         * Latest data received by this elements event.
-         *
-         * @attribute data
-         * @type any
-         * @default null
-         */
-        data : {
-          value: null
-        },
-      },
-      connected : function ( ) {
-        this.socket.on(this.event, function(data){
-          // Attach data to this receiver
-          this.data = data;
-          // Fire `received-data` event
-          this.fire('received-data', data);
-          this.fire('iron-signal', {name: 'socket-inbound-'+this.event, data:data});
-        }.bind(this));
-      },
-      detached : function () {
-        this.socket.off(this.event);
-      },
-      attached: function() {
-        this.async(function(){
-          if ( this.parentNode || this.parentNode.nodeName === 'socket-connection' ) {
-            this.connect().then(this.connected.bind(this));
-          } else {
-            console.warn(this.nodeName + " must be a child of <socket-connection>");
-          }
-        });
-      },
-      connect : function () {
-        return this.parentNode.connect();
-      },
-      get socket (){
-        return this.parentNode.socket;
-      }
-    });
-  </script>
+    </script>
 </dom-module>
