@@ -100,7 +100,7 @@ The `socket-connection` provides the ability to connect to a `socket.io` server.
              * @method connect
              */
             connect: function() {
-                if (!this.isConnected) {
+                if (!this.connected) {
                     this._connect = new Promise(function(resolve, reject) {
 
                         try {
